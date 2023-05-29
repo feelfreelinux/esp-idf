@@ -16,10 +16,34 @@
 ********************************************************************************/
 
 enum {
+    BTC_SV_AV_AA_SOURCE_MIN = 0,
     BTC_SV_AV_AA_SBC_INDEX = 0,
-    BTC_SV_AV_AA_SBC_SINK_INDEX,
-    BTC_SV_AV_AA_SEP_INDEX  /* Last index */
+#if (defined(APTX_DEC_INCLUDED) && APTX_DEC_INCLUDED == TRUE)
+    BTC_SV_AV_AA_APTX_INDEX,
+    BTC_SV_AV_AA_APTX_HD_INDEX,
+    BTC_SV_AV_AA_APTX_LL_INDEX,
+#endif /* APTX_DEC_INCLUDED */
+#if (defined(LDAC_DEC_INCLUDED) && LDAC_DEC_INCLUDED == TRUE)
+    BTC_SV_AV_AA_LDAC_INDEX,
+#endif /* LDAC_DEC_INCLUDED */
+    BTC_SV_AV_AA_SOURCE_MAX,
+    BTC_SV_AV_AA_SINK_MIN = BTC_SV_AV_AA_SOURCE_MAX,
+    BTC_SV_AV_AA_SBC_SINK_INDEX = BTC_SV_AV_AA_SINK_MIN,
+#if (defined(APTX_DEC_INCLUDED) && APTX_DEC_INCLUDED == TRUE)
+    BTC_SV_AV_AA_APTX_SINK_INDEX,
+    BTC_SV_AV_AA_APTX_HD_SINK_INDEX,
+    BTC_SV_AV_AA_APTX_LL_SINK_INDEX,
+#endif /* APTX_DEC_INCLUDED */
+#if (defined(LDAC_DEC_INCLUDED) && LDAC_DEC_INCLUDED == TRUE)
+    BTC_SV_AV_AA_LDAC_SINK_INDEX,
+#endif /* LDAC_DEC_INCLUDED */
+    BTC_SV_AV_AA_SINK_MAX
 };
+
+#define BTC_SV_AV_AA_SOURCE_COUNT (BTC_SV_AV_AA_SOURCE_MAX - \
+                                   BTC_SV_AV_AA_SOURCE_MIN)
+#define BTC_SV_AV_AA_SINK_COUNT (BTC_SV_AV_AA_SINK_MAX - \
+                                 BTC_SV_AV_AA_SINK_MIN)
 
 /*****************************************************************************
 **  Local data
@@ -27,7 +51,6 @@ enum {
 typedef struct {
     UINT8 sep_info_idx;                 /* local SEP index (in BTA tables) */
     UINT8 seid;                         /* peer SEP index (in peer tables) */
-    UINT8 codec_type;                   /* peer SEP codec type */
     UINT8 codec_caps[AVDT_CODEC_SIZE];  /* peer SEP codec capabilities */
     UINT8 num_protect;                  /* peer SEP number of CP elements */
     UINT8 protect_info[BTA_AV_CP_INFO_LEN];  /* peer SEP content protection info */
@@ -35,8 +58,8 @@ typedef struct {
 
 typedef struct {
     BD_ADDR         addr;               /* address of audio/video peer */
-    tBTA_AV_CO_SINK snks[BTC_SV_AV_AA_SEP_INDEX]; /* array of supported sinks */
-    tBTA_AV_CO_SINK srcs[BTC_SV_AV_AA_SEP_INDEX]; /* array of supported srcs */
+    tBTA_AV_CO_SINK snks[BTC_SV_AV_AA_SINK_COUNT]; /* array of supported sinks */
+    tBTA_AV_CO_SINK srcs[BTC_SV_AV_AA_SOURCE_COUNT]; /* array of supported srcs */
     UINT8           num_snks;           /* total number of sinks at peer */
     UINT8           num_srcs;           /* total number of srcs at peer */
     UINT8           num_seps;           /* total number of seids at peer */

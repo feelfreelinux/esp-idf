@@ -24,6 +24,7 @@
  ******************************************************************************/
 
 #include <string.h>
+#include "stack/a2d_api.h"
 #include "stack/bt_types.h"
 #include "common/bt_target.h"
 #include "common/bt_defs.h"
@@ -243,45 +244,12 @@ void avdt_scb_hdl_open_rsp(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 *******************************************************************************/
 void avdt_scb_hdl_pkt_no_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 {
-    UINT8   *p, *p_start;
-    UINT8   o_v, o_p, o_x, o_cc;
-    UINT8   m_pt;
-    UINT8   marker;
-    UINT16  seq;
-    UINT32  time_stamp;
-    UINT16  offset;
-    UINT16  ex_len;
+    UINT8   m_pt = 0;
+    UINT8   marker = 0;
+    UINT16  seq = 0;
+    UINT32  time_stamp = 0;
+    UINT16  offset = 0;
     UINT8   pad_len = 0;
-
-    p = p_start = (UINT8 *)(p_data->p_pkt + 1) + p_data->p_pkt->offset;
-
-    /* parse media packet header */
-    AVDT_MSG_PRS_OCTET1(p, o_v, o_p, o_x, o_cc);
-    AVDT_MSG_PRS_M_PT(p, m_pt, marker);
-    BE_STREAM_TO_UINT16(seq, p);
-    BE_STREAM_TO_UINT32(time_stamp, p);
-    p += 4;
-
-    UNUSED(o_v);
-
-    /* skip over any csrc's in packet */
-    p += o_cc * 4;
-
-    /* check for and skip over extension header */
-    if (o_x) {
-        p += 2;
-        BE_STREAM_TO_UINT16(ex_len, p);
-        p += ex_len * 4;
-    }
-
-    /* save our new offset */
-    offset = (UINT16) (p - p_start);
-
-    /* adjust length for any padding at end of packet */
-    if (o_p) {
-        /* padding length in last byte of packet */
-        pad_len =  *(p_start + p_data->p_pkt->len);
-    }
 
     /* do sanity check */
     if ((offset > p_data->p_pkt->len) || ((pad_len + offset) > p_data->p_pkt->len)) {
@@ -291,12 +259,7 @@ void avdt_scb_hdl_pkt_no_frag(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
     }
     /* adjust offset and length and send it up */
     else {
-        p_data->p_pkt->len -= (offset + pad_len);
-        p_data->p_pkt->offset += offset;
-
         if (p_scb->cs.p_data_cback != NULL) {
-            /* report sequence number */
-            p_data->p_pkt->layer_specific = seq;
             (*p_scb->cs.p_data_cback)(avdt_scb_to_hdl(p_scb), p_data->p_pkt,
                                       time_stamp, (UINT8)(m_pt | (marker << 7)));
         } else {
@@ -788,18 +751,18 @@ void avdt_scb_hdl_setconfig_cmd(tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 
     if (!p_scb->in_use) {
         p_cfg = p_data->msg.config_cmd.p_cfg;
-        /* set sep as in use */
-        p_scb->in_use = TRUE;
+            /* set sep as in use */
+            p_scb->in_use = TRUE;
 
-        /* copy info to scb */
-        p_scb->p_ccb = avdt_ccb_by_idx(p_data->msg.config_cmd.hdr.ccb_idx);
-        p_scb->peer_seid = p_data->msg.config_cmd.int_seid;
-        memcpy(&p_scb->req_cfg, p_cfg, sizeof(tAVDT_CFG));
-        /* call app callback */
-        (*p_scb->cs.p_ctrl_cback)(avdt_scb_to_hdl(p_scb), /* handle of scb- which is same as sep handle of bta_av_cb.p_scb*/
-                                    p_scb->p_ccb ? p_scb->p_ccb->peer_addr : NULL,
-                                    AVDT_CONFIG_IND_EVT,
-                                    (tAVDT_CTRL *) &p_data->msg.config_cmd);
+            /* copy info to scb */
+            p_scb->p_ccb = avdt_ccb_by_idx(p_data->msg.config_cmd.hdr.ccb_idx);
+            p_scb->peer_seid = p_data->msg.config_cmd.int_seid;
+            memcpy(&p_scb->req_cfg, p_cfg, sizeof(tAVDT_CFG));
+            /* call app callback */
+            (*p_scb->cs.p_ctrl_cback)(avdt_scb_to_hdl(p_scb), /* handle of scb- which is same as sep handle of bta_av_cb.p_scb*/
+                                      p_scb->p_ccb ? p_scb->p_ccb->peer_addr : NULL,
+                                      AVDT_CONFIG_IND_EVT,
+                                      (tAVDT_CTRL *) &p_data->msg.config_cmd);
     } else {
         avdt_scb_rej_in_use(p_scb, p_data);
     }
@@ -1076,7 +1039,7 @@ void avdt_scb_hdl_delay_rpt_cmd (tAVDT_SCB *p_scb, tAVDT_SCB_EVT *p_data)
 
     if (p_scb->p_ccb) {
         if (p_scb->cs.cfg.psc_mask & AVDT_PSC_DELAY_RPT) {
-            avdt_msg_send_rsp(p_scb->p_ccb, AVDT_SIG_DELAY_RPT, &p_data->msg);
+        avdt_msg_send_rsp(p_scb->p_ccb, AVDT_SIG_DELAY_RPT, &p_data->msg);
             if(p_scb->role == AVDT_CONF_INT) {
                 btu_stop_timer(&p_scb->timer_entry);
                 /* initiate open */

@@ -263,6 +263,9 @@ if(CONFIG_BT_ENABLED)
                    "host/bluedroid/main/bte_main.c"
                    "host/bluedroid/stack/a2dp/a2d_api.c"
                    "host/bluedroid/stack/a2dp/a2d_sbc.c"
+                   "host/bluedroid/stack/a2dp/a2d_sbc_decoder.c"
+                   "host/bluedroid/stack/a2dp/a2dp_codec_config.c"
+                   "host/bluedroid/stack/a2dp/a2dp_vendor.c"
                    "host/bluedroid/stack/avct/avct_api.c"
                    "host/bluedroid/stack/avct/avct_ccb.c"
                    "host/bluedroid/stack/avct/avct_l2c.c"
@@ -676,6 +679,28 @@ if(CONFIG_BT_ENABLED)
 
 endif()
 
+if(CONFIG_BT_A2DP_APTX_DECODER)
+    list(APPEND srcs "host/bluedroid/stack/a2dp/a2dp_vendor_aptx.c"
+                     "host/bluedroid/stack/a2dp/a2dp_vendor_aptx_hd.c"
+                     "host/bluedroid/stack/a2dp/a2dp_vendor_aptx_ll.c"
+                     "host/bluedroid/stack/a2dp/a2dp_vendor_aptx_decoder.c")
+endif()
+
+if(CONFIG_BT_A2DP_LDAC_DECODER)
+    list(APPEND priv_include_dirs host/bluedroid/external/libldacdec)
+    list(APPEND ldac_dec_srcs "host/bluedroid/external/libldacdec/bit_allocation.c"
+               "host/bluedroid/external/libldacdec/bit_reader.c"
+               "host/bluedroid/external/libldacdec/huffCodes.c"
+               "host/bluedroid/external/libldacdec/imdct.c"
+               "host/bluedroid/external/libldacdec/libldacdec.c"
+               "host/bluedroid/external/libldacdec/spectrum.c"
+               "host/bluedroid/external/libldacdec/utility.c")
+    list(APPEND srcs ${ldac_dec_srcs})
+
+    list(APPEND srcs "host/bluedroid/stack/a2dp/a2dp_vendor_ldac.c"
+                     "host/bluedroid/stack/a2dp/a2dp_vendor_ldac_decoder.c")
+endif()
+
 # requirements can't depend on config
 idf_component_register(SRCS "${srcs}"
                 INCLUDE_DIRS "${include_dirs}"
@@ -719,6 +744,11 @@ if(CONFIG_BT_ENABLED)
         PROPERTIES COMPILE_FLAGS -Wno-address-of-packed-member)
 
     target_compile_options(${COMPONENT_LIB} PRIVATE "-Wno-format")
+endif()
+
+if(CONFIG_BT_A2DP_APTX_DECODER)
+    add_prebuilt_library(libfreeaptx "${CMAKE_CURRENT_SOURCE_DIR}/host/bluedroid/external/libfreeaptx/libfreeaptx.a")
+    target_link_libraries(${COMPONENT_LIB} PUBLIC libfreeaptx)
 endif()
 
 if(CONFIG_BT_NIMBLE_MESH)
